@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Search, Pencil, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useLibrary } from "../../context/LibraryContext.jsx";
+// import { useLibrary } from "../../context/LibraryContext.jsx";
 import { SectionHeader, Card, EmptyState, Th, Td, Stamp, inputCls, Pagination, CoverThumb } from "../../components/ui/UI.jsx";
 import axios from "axios";
 
@@ -18,7 +18,6 @@ export default function ViewBooks() {
       try{
         const response = await axios.get("http://127.0.0.1:8000/book/");
         setBooks(response.data)
-        console.log(response.data);
       }catch(error){
         console.error("Error fetching books:", error);
       }

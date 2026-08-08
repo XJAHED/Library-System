@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useLibrary } from "../../context/LibraryContext.jsx";
-import { SectionHeader, Field, Card, Msg, inputCls, ImageUpload } from "../../components/ui/UI.jsx";
+import { SectionHeader, Field, Card, Msg, inputCls } from "../../components/ui/UI.jsx";
+import axios from "axios";
 
-const EMPTY = { memberName: "", memberId: "", position: "", department: "", batch: "", contactNo: "", email: "", photo: "" };
+const EMPTY = { Member_name: "", member_id: "", postion: "", department: "", batch: "", contact_no: "", email: "" };
 
 export default function AddMember() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { members, addMember, updateMember } = useLibrary();
   const isEdit = Boolean(id);
 
   const [form, setForm] = useState(EMPTY);
@@ -16,28 +15,38 @@ export default function AddMember() {
 
   useEffect(() => {
     if (isEdit) {
-      const existing = members.find((m) => String(m.id) === id);
-      if (existing) setForm(existing);
+      const getMember = async () => {
+        try {
+          const response = await axios.get(`http://127.0.0.1:8000/member/${id}/`);
+          setForm(response.data);
+        } catch (error) {
+          console.error("Error fetching member:", error);
+          setMsg("error:Failed to load member details.");
+        }
+      };
+      getMember();
     } else {
       setForm(EMPTY);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    const result = isEdit ? updateMember(Number(id), form) : addMember(form);
-    if (!result.ok) {
-      setMsg(`error:${result.message}`);
-      return;
+    try {
+      if (isEdit) {
+        await axios.put(`http://127.0.0.1:8000/member/${id}/`, form);
+        navigate("/view-members");
+      } else {
+        await axios.post("http://127.0.0.1:8000/member/", form);
+        setForm(EMPTY);
+        setMsg("ok:Member added successfully!");
+        setTimeout(() => setMsg(""), 3000);
+      }
+    } catch (error) {
+      console.error("Error saving member:", error);
+      setMsg("error:Failed to save member. Please check the data and try again.");
     }
-    if (isEdit) {
-      navigate("/view-members");
-      return;
-    }
-    setForm(EMPTY);
-    setMsg(`ok:${result.message}`);
-    setTimeout(() => setMsg(""), 3000);
   };
 
   return (
@@ -50,17 +59,14 @@ export default function AddMember() {
       <Card className="p-7 lg:p-9">
         <Msg value={msg} />
         <form onSubmit={submit} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="sm:col-span-2 lg:col-span-3">
-            <ImageUpload label="Member Photo" value={form.photo} onChange={(v) => setForm({ ...form, photo: v })} shape="circle" />
-          </div>
           <Field label="Member Name" required>
-            <input required className={inputCls} value={form.memberName} onChange={(e) => setForm({ ...form, memberName: e.target.value })} placeholder="e.g. Rafiq Ahmed" />
+            <input required className={inputCls} value={form.Member_name} onChange={(e) => setForm({ ...form, Member_name: e.target.value })} placeholder="e.g. Rafiq Ahmed" />
           </Field>
           <Field label="Member ID" required>
-            <input required className={inputCls} style={{ fontFamily: "'JetBrains Mono', monospace" }} value={form.memberId} onChange={(e) => setForm({ ...form, memberId: e.target.value })} placeholder="e.g. MEM-1003" />
+            <input required className={inputCls} style={{ fontFamily: "'JetBrains Mono', monospace" }} value={form.member_id} onChange={(e) => setForm({ ...form, member_id: e.target.value })} placeholder="e.g. MEM-1003" />
           </Field>
           <Field label="Position" required>
-            <input required className={inputCls} value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} placeholder="e.g. Student, Teacher" />
+            <input required className={inputCls} value={form.postion} onChange={(e) => setForm({ ...form, postion: e.target.value })} placeholder="e.g. Student, Teacher" />
           </Field>
           <Field label="Department" required>
             <input required className={inputCls} value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} placeholder="e.g. CSE" />
@@ -69,7 +75,7 @@ export default function AddMember() {
             <input required className={inputCls} value={form.batch} onChange={(e) => setForm({ ...form, batch: e.target.value })} placeholder="e.g. 48" />
           </Field>
           <Field label="Contact No" required>
-            <input required type="tel" className={inputCls} value={form.contactNo} onChange={(e) => setForm({ ...form, contactNo: e.target.value.replace(/[^0-9]/g, "") })} placeholder="e.g. 01712345678" />
+            <input required type="tel" className={inputCls} value={form.contact_no} onChange={(e) => setForm({ ...form, contact_no: e.target.value.replace(/[^0-9]/g, "") })} placeholder="e.g. 01712345678" />
           </Field>
           <Field label="Email" required>
             <input required type="email" className={inputCls} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="name@example.com" />

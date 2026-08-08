@@ -1,18 +1,34 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Pencil, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useLibrary } from "../../context/LibraryContext.jsx";
 import { SectionHeader, Card, EmptyState, Th, Td, inputCls, Pagination, Avatar } from "../../components/ui/UI.jsx";
+import axios from "axios";
 
 const PAGE_SIZE = 6;
 
 export default function ViewMembers() {
-  const { members, deleteMember } = useLibrary();
+  const [members, setMembers] = useState([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  const getMembers = async () => {
+    try {
+      const response = await axios.get("http://127.0.0.1:8000/member/");
+      setMembers(response.data);
+    } catch (error) {
+      console.error("Error fetching members:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getMembers();
+  }, []);
 
   const filtered = members.filter((m) =>
-    [m.memberName, m.memberId, m.department].join(" ").toLowerCase().includes(search.toLowerCase())
+    [m.Member_name, m.member_id, m.department].join(" ").toLowerCase().includes(search.toLowerCase())
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -22,10 +38,15 @@ export default function ViewMembers() {
     setPage(1);
   };
 
-  const handleDelete = (m) => {
-    if (window.confirm(`Delete member "${m.memberName}"? This cannot be undone.`)) {
-      deleteMember(m.id);
-      if (paged.length === 1 && page > 1) setPage(page - 1);
+  const handleDelete = async (m) => {
+    if (window.confirm(`Delete member "${m.Member_name}"? This cannot be undone.`)) {
+      try {
+        await axios.delete(`http://127.0.0.1:8000/member/${m.id}/`);
+        setMembers(members.filter((member) => member.id !== m.id));
+        if (paged.length === 1 && page > 1) setPage(page - 1);
+      } catch (error) {
+        console.error("Error deleting member:", error);
+      }
     }
   };
 
@@ -37,13 +58,14 @@ export default function ViewMembers() {
         <input className={`${inputCls} pl-9`} placeholder="Search by name, ID or department" value={search} onChange={(e) => handleSearch(e.target.value)} />
       </div>
       <Card className="overflow-x-auto">
-        {paged.length === 0 ? (
+        {loading ? (
+          <EmptyState text="Loading members..." />
+        ) : paged.length === 0 ? (
           <EmptyState text="No members found." />
         ) : (
           <table className="w-full">
             <thead>
               <tr>
-                <Th>Photo</Th>
                 <Th>Name</Th>
                 <Th>Member ID</Th>
                 <Th>Position</Th>
@@ -57,13 +79,12 @@ export default function ViewMembers() {
             <tbody>
               {paged.map((m) => (
                 <tr key={m.id} className="hover:bg-gold/[0.04]">
-                  <Td><Avatar src={m.photo} alt={m.memberName} /></Td>
-                  <Td>{m.memberName}</Td>
-                  <Td mono>{m.memberId}</Td>
-                  <Td>{m.position}</Td>
+                  <Td>{m.Member_name}</Td>
+                  <Td mono>{m.member_id}</Td>
+                  <Td>{m.postion}</Td>
                   <Td>{m.department}</Td>
                   <Td>{m.batch}</Td>
-                  <Td mono>{m.contactNo}</Td>
+                  <Td mono>{m.contact_no}</Td>
                   <Td>{m.email}</Td>
                   <Td>
                     <div className="flex items-center gap-2">
