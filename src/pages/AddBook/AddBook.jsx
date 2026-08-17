@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { SectionHeader, Field, Card, Msg, inputCls, ImageUpload } from "../../components/ui/UI.jsx";
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "https://library-system-3x9t.onrender.com";
 
 const EMPTY = {
   book_name: "",

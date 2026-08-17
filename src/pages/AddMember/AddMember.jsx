@@ -17,7 +17,7 @@ export default function AddMember() {
     if (isEdit) {
       const getMember = async () => {
         try {
-          const response = await axios.get(`http://127.0.0.1:8000/member/${id}/`);
+          const response = await axios.get(`https://library-system-3x9t.onrender.com/member/${id}/`);
           setForm(response.data);
         } catch (error) {
           console.error("Error fetching member:", error);
@@ -35,10 +35,10 @@ export default function AddMember() {
     e.preventDefault();
     try {
       if (isEdit) {
-        await axios.put(`http://127.0.0.1:8000/member/${id}/`, form);
+        await axios.put(`https://library-system-3x9t.onrender.com/member/${id}/`, form);
         navigate("/view-members");
       } else {
-        await axios.post("http://127.0.0.1:8000/member/", form);
+        await axios.post("https://library-system-3x9t.onrender.com/member/", form);
         setForm(EMPTY);
         setMsg("ok:Member added successfully!");
         setTimeout(() => setMsg(""), 3000);

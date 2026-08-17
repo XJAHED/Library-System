@@ -16,7 +16,7 @@ export default function ViewBooks() {
   useEffect(()=>{
     const fatchBooks = async()=>{
       try{
-        const response = await axios.get("http://127.0.0.1:8000/book/");
+        const response = await axios.get("https://library-system-3x9t.onrender.com/book/");
         setBooks(response.data)
       }catch(error){
         console.error("Error fetching books:", error);
@@ -44,7 +44,7 @@ export default function ViewBooks() {
       )
     ) {
       await axios.delete(
-        `http://127.0.0.1:8000/book/${b.book_number}/`
+        `https://library-system-3x9t.onrender.com/book/${b.book_number}/`
       );
   
       setBooks((prevBooks) =>

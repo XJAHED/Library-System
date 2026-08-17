@@ -1,17 +1,48 @@
-import { useState } from "react";
-import { useLibrary } from "../../context/LibraryContext.jsx";
+import { useEffect, useState } from "react";
 import { SectionHeader, Card, EmptyState, Th, Td, Stamp, Pagination } from "../../components/ui/UI.jsx";
-import { fmt } from "../../utils/helpers.js";
+import { fmt, todayStr } from "../../utils/helpers.js";
 
 const FILTERS = ["All", "Issued", "Returned", "Overdue"];
 const PAGE_SIZE = 8;
+const API_URL = "https://library-system-3x9t.onrender.com/issuebook/";
 
 export default function BookHistory() {
-  const { issues, issueStatus } = useLibrary();
+  const [issues, setIssues] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState("");
   const [filter, setFilter] = useState("All");
   const [page, setPage] = useState(1);
 
-  const rows = issues.filter((i) => filter === "All" || issueStatus(i) === filter).slice().reverse();
+  const fetchIssues = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      // API does not expose `id` in the list response.
+      // Django orders records by PK ascending, so id = index + 1.
+      setIssues(Array.isArray(data) ? data.map((rec, i) => ({ ...rec, id: i + 1 })) : []);
+      setApiError("");
+    } catch (err) {
+      setApiError(`Failed to load issue records: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchIssues();
+  }, []);
+
+  const statusOf = (rec) => {
+    if (rec.is_returned) return "Returned";
+    return rec.due_date < todayStr() ? "Overdue" : "Issued";
+  };
+
+  const rows = issues
+    .filter((i) => filter === "All" || statusOf(i) === filter)
+    .slice()
+    .reverse();
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const paged = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -37,7 +68,11 @@ export default function BookHistory() {
         ))}
       </div>
       <Card className="overflow-x-auto">
-        {paged.length === 0 ? (
+        {loading ? (
+          <EmptyState text="Loading issue records..." />
+        ) : apiError ? (
+          <EmptyState text={apiError} />
+        ) : paged.length === 0 ? (
           <EmptyState text="No history yet." />
         ) : (
           <table className="w-full">
@@ -52,14 +87,24 @@ export default function BookHistory() {
               </tr>
             </thead>
             <tbody>
-              {paged.map((i) => (
-                <tr key={i.id} className="hover:bg-gold/[0.04]">
-                  <Td>{i.memberName}</Td>
-                  <Td>{i.bookTitle}</Td>
-                  <Td mono>{fmt(i.issueDate)}</Td>
-                  <Td mono>{fmt(i.dueDate)}</Td>
-                  <Td mono>{i.returnDate ? fmt(i.returnDate) : "—"}</Td>
-                  <Td><Stamp status={issueStatus(i)} /></Td>
+              {paged.map((rec) => (
+                <tr key={rec.id} className="hover:bg-gold/[0.04]">
+                  <Td>
+                    {rec.member.Member_name}{" "}
+                    <span className="text-ink/35" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                      ({rec.member.member_id})
+                    </span>
+                  </Td>
+                  <Td>
+                    {rec.book.book_name}{" "}
+                    <span className="text-ink/35" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                      (ISBN: {rec.book.isbn_number})
+                    </span>
+                  </Td>
+                  <Td mono>{fmt(rec.issue_date)}</Td>
+                  <Td mono>{fmt(rec.due_date)}</Td>
+                  <Td mono>{rec.return_date ? fmt(rec.return_date) : "—"}</Td>
+                  <Td><Stamp status={statusOf(rec)} /></Td>
                 </tr>
               ))}
             </tbody>

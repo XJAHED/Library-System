@@ -14,7 +14,7 @@ export default function ViewMembers() {
 
   const getMembers = async () => {
     try {
-      const response = await axios.get("http://127.0.0.1:8000/member/");
+      const response = await axios.get("https://library-system-3x9t.onrender.com/member/");
       setMembers(response.data);
     } catch (error) {
       console.error("Error fetching members:", error);
@@ -41,7 +41,7 @@ export default function ViewMembers() {
   const handleDelete = async (m) => {
     if (window.confirm(`Delete member "${m.Member_name}"? This cannot be undone.`)) {
       try {
-        await axios.delete(`http://127.0.0.1:8000/member/${m.id}/`);
+        await axios.delete(`https://library-system-3x9t.onrender.com/member/${m.id}/`);
         setMembers(members.filter((member) => member.id !== m.id));
         if (paged.length === 1 && page > 1) setPage(page - 1);
       } catch (error) {
